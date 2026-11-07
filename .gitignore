@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Pipeline output (regenerated on every run)
+reports/*
+!reports/.gitkeep
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
