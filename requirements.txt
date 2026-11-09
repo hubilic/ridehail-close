@@ -1,1 +1,2 @@
 psycopg[binary]==3.3.6
+pandas==2.2.3
