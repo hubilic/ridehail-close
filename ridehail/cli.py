@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from ridehail import db 
-from ridehail.load import insert_cities
+from ridehail.load import insert_cities, insert_drivers
 
 
 DATA_DIR = Path("/data")
@@ -21,6 +21,7 @@ def cmd_close(args: argparse.Namespace) -> int:
     insert_cities (REFERENCE_DIR / "cities.csv")
     # TODO: load every INCOMING_DIR / "trips_*.csv", in file-name order,
     #          printing one reconciliation line per file
+    insert_drivers (REFERENCE_DIR / "drivers.csv")
     # TODO: write the reports into REPORTS_DIR
     print("TODO reference data, trip files, reports")
     return 0
