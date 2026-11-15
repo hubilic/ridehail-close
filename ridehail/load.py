@@ -68,4 +68,4 @@ def load_trip_file(path, validate_cities) -> None:
                 db.once(loaded_files_insert_query, (source_file, file_sha256)),
         ])
 
-        print(f"{source_file}.lines={len(rows)} loaded={len(accepted_rows)} rejected={len(rejected_rows)}")
+        print(f"{source_file} lines={len(rows)} loaded={len(accepted_rows)} rejected={len(rejected_rows)}")
