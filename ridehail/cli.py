@@ -2,7 +2,9 @@ import argparse
 import sys
 from pathlib import Path
 
-from ridehail import db
+from ridehail import db 
+from ridehail.load import insert_cities, insert_drivers, load_trip_file
+
 
 DATA_DIR = Path("/data")
 REFERENCE_DIR = DATA_DIR / "reference"
@@ -16,8 +18,13 @@ def cmd_close(args: argparse.Namespace) -> int:
     print(f"schema {len(applied)} file{'s' if len(applied) != 1 else ''} applied")
 
     # TODO: load REFERENCE_DIR / "cities.csv" and "drivers.csv"
+    valid_cities = insert_cities (REFERENCE_DIR / "cities.csv")
+    insert_drivers(REFERENCE_DIR / "drivers.csv")
+
     # TODO: load every INCOMING_DIR / "trips_*.csv", in file-name order,
     #          printing one reconciliation line per file
+    for trip_path in sorted(INCOMING_DIR.glob("trips_*.csv")):
+        load_trip_file(trip_path, valid_cities)
     # TODO: write the reports into REPORTS_DIR
     print("TODO reference data, trip files, reports")
     return 0
