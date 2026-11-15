@@ -1,5 +1,6 @@
 import pandas as pd
 from ridehail import db
+from ridehail.validate import validate_trip
 
 cities_insert_query = """ 
     INSERT INTO core.cities (city, voivodeship) VALUES (%s, %s)
@@ -28,3 +29,20 @@ def insert_drivers(path = "ridehail-close/data/reference/drivers.csv") -> None:
         csv_drivers = pd.read_csv(path, sep= ",")
         drivers_rows = list(csv_drivers.itertuples(index=False, name=None))
         db.run_in_transaction([db.many(drivers_insert_query, drivers_rows)])
+
+
+def load_trip_file(path, validate_cities) -> None:
+        csv_trips = pd.read_csv(path, sep= ",", dtype=str, keep_default_na=False)
+        rows = csv_trips.to_dict(orient='records')
+        rejected_rows = []
+        accepted_rows = []
+        for line_no, row in enumerate(rows, start=2):
+            reason = validate_trip(row, validate_cities)
+            if reason:
+                print(reason)
+                rejected_rows.append((line_no, row, reason))
+            else:
+                  accepted_rows.append((line_no,row ))
+        print(f"Rejected rows: {len(rejected_rows)}")
+        print(f"Accepted_rows: {len(accepted_rows)} ")
+        print(rejected_rows[:1])
