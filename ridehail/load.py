@@ -32,6 +32,11 @@ loaded_files_insert_query = """
         INSERT INTO raw.loaded_files (file_name, sha256) VALUES (%s, %s)
         """
 
+loaded_file_select_query = """
+        SELECT sha256 from raw.loaded_files where sha256 = %s
+"""
+
+
 def insert_cities(path = "ridehail-close/data/reference/cities.csv") -> None:
         csv_cities = pd.read_csv(path, sep=",")
         city_rows = list(csv_cities.itertuples(index=False, name=None))
@@ -46,13 +51,17 @@ def insert_drivers(path = "ridehail-close/data/reference/drivers.csv") -> None:
 
 
 def load_trip_file(path, validate_cities) -> None:
+        file_bytes = Path(path).read_bytes()
+        file_sha256 = hashlib.sha256(file_bytes).hexdigest()
+        source_file = Path(path).name
+        loaded_file = db.fetch_one(loaded_file_select_query, (file_sha256,))
+        if loaded_file is not None:
+              print (f"{source_file} skipped (already loaded)")
+              return              
         csv_trips = pd.read_csv(path, sep= ",", dtype=str, keep_default_na=False)
         rows = csv_trips.to_dict(orient='records')
         rejected_rows = []
         accepted_rows = []
-        file_bytes = Path(path).read_bytes()
-        file_sha256 = hashlib.sha256(file_bytes).hexdigest()
-        source_file = Path(path).name
         
         for line_no, row in enumerate(rows, start=2):
             reason = validate_trip(row, validate_cities)
