@@ -5,12 +5,12 @@ from pathlib import Path
 import hashlib
 
 cities_insert_query = """ 
-    INSERT INTO core.cities (city, voivodeship) VALUES (%s, %s)
+    insert into core.cities (city, voivodeship) values (%s, %s)
     on conflict (city) do update set voivodeship = excluded.voivodeship where cities.voivodeship != excluded.voivodeship
 """
 
 drivers_insert_query = """
-        INSERT INTO core.drivers (driver_id,name,home_city,commission_rate,joined_at) VALUES (%s, %s, %s, %s, %s)
+        insert into core.drivers (driver_id,name,home_city,commission_rate,joined_at) values (%s, %s, %s, %s, %s)
         on conflict (driver_id) do update
         set name = excluded.name, 
         home_city = excluded.home_city,
@@ -22,19 +22,56 @@ drivers_insert_query = """
         or drivers.joined_at != excluded.joined_at"""
 
 rejected_insert_query = """
-        INSERT INTO raw.rejected (source_file, line_no, reason, raw_row, file_sha256) VALUES (%s, %s, %s, %s, %s)
+        insert into raw.rejected (source_file, line_no, reason, raw_row, file_sha256) values (%s, %s, %s, %s, %s)
         """
 trips_insert_query = """
-        INSERT INTO raw.trips (source_file, line_no, trip_id, driver_id, city, requested_at, completed_at, updated_at, distance_km, fare_pln, status, file_sha256) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        insert into raw.trips (source_file, line_no, trip_id, driver_id, city, requested_at, completed_at, updated_at, distance_km, fare_pln, status, file_sha256) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 
 loaded_files_insert_query = """
-        INSERT INTO raw.loaded_files (file_name, sha256) VALUES (%s, %s)
+        insert into raw.loaded_files (file_name, sha256) values (%s, %s)
         """
 
 loaded_file_select_query = """
-        SELECT sha256 from raw.loaded_files where sha256 = %s
+        select sha256 from raw.loaded_files where sha256 = %s
 """
+
+core_trips_upsert_query = """
+        with row_trips as (
+        select
+	        t.trip_id,
+	        t.driver_id,
+	        t.city,
+	        t.requested_at,
+	        t.completed_at,
+	        t.updated_at,
+	        t.distance_km,
+	        t.fare_pln,
+	        t.status,
+        row_number() over (
+	        partition by t.trip_id order by t.updated_at desc
+        ) as rn
+        from raw.trips t
+        )
+        insert into core.trips (
+	        trip_id, driver_id, city, requested_at, completed_at, updated_at, distance_km, fare_pln, status
+        )
+        select
+	        trip_id,
+	        driver_id,
+	        city,
+	        requested_at,
+	        completed_at,
+	        updated_at,
+	        distance_km,
+	        fare_pln,
+	        status
+        from row_trips where rn=1
+        on conflict (trip_id) do update
+        set driver_id = excluded.driver_id, city = excluded.city, requested_at = excluded.requested_at, completed_at = excluded.completed_at, updated_at = excluded.updated_at, distance_km = excluded.distance_km, fare_pln = excluded.fare_pln, status = excluded.status
+        where excluded.updated_at > trips.updated_at;
+"""
+        
 
 
 def insert_cities(path = "ridehail-close/data/reference/cities.csv") -> None:
@@ -78,3 +115,6 @@ def load_trip_file(path, validate_cities) -> None:
         ])
 
         print(f"{source_file} lines={len(rows)} loaded={len(accepted_rows)} rejected={len(rejected_rows)}")
+
+def refresh_core_trips() -> None:
+        db.execute(core_trips_upsert_query)

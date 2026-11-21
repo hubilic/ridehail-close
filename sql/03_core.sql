@@ -11,3 +11,15 @@ create table if not exists core.drivers (
     joined_at date not null
 );
 
+create table if not exists core.trips (
+    trip_id text primary key,
+    driver_id text not null,
+    city text not null,
+    requested_at timestamptz not null,
+    completed_at timestamptz,
+    updated_at timestamptz not null,
+    distance_km decimal,
+    fare_pln numeric (10,2),
+    status text not null
+);
+
