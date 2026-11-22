@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ridehail import db
 from ridehail.load import insert_cities, insert_drivers, load_trip_file, refresh_core_trips
+from ridehail.report import write_reports
 
 DATA_DIR = Path("/data")
 REFERENCE_DIR = DATA_DIR / "reference"
@@ -25,9 +26,7 @@ def cmd_close(args: argparse.Namespace) -> int:
     for trip_path in sorted(INCOMING_DIR.glob("trips_*.csv")):
         load_trip_file(trip_path, valid_cities)
     refresh_core_trips()
-
-    # TODO: write the reports into REPORTS_DIR
-    print("TODO reference data, trip files, reports")
+    write_reports(REPORTS_DIR) #export reports to CSV
     return 0
 
 
@@ -43,8 +42,9 @@ def cmd_load(args: argparse.Namespace) -> int:
 
 def cmd_report(args: argparse.Namespace) -> int:
     # TODO: write the report CSVs into REPORTS_DIR
-    print("report: not implemented yet", file=sys.stderr)
-    return 1
+    db.apply_schema()
+    write_reports(REPORTS_DIR)
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
