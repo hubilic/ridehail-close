@@ -74,7 +74,7 @@ core_trips_upsert_query = """
         
 
 
-def insert_cities(path = "ridehail-close/data/reference/cities.csv") -> None:
+def insert_cities(path = "ridehail-close/data/reference/cities.csv") -> set[str]:
         csv_cities = pd.read_csv(path, sep=",")
         city_rows = list(csv_cities.itertuples(index=False, name=None))
         db.run_in_transaction([db.many(cities_insert_query, city_rows)])
